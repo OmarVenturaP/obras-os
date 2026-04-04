@@ -1,23 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f8fbff;
+  --foreground: #0d1b2a;
   
-  /* Azul Petróleo (Deep Navy) */
   --primary: #145184;
   --primary-foreground: #ffffff;
   
-  /* Amarillo Seguridad (Safety Yellow) */
-  --accent: #FFD700;
-  --accent-foreground: #0f172a;
+  --accent: #daad00;
+  --accent-foreground: #0d1b2a;
   
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #145184;
   
-  --border: #e2e8f0;
+  --muted: #f1f5f9;
+  --muted-foreground: #334155;
+  
+  --border: rgba(20, 81, 132, 0.1);
   --input: #e2e8f0;
   --ring: #145184;
+
+  /* Semantic Colors */
+  --success: #2d5a27;
+  --alert: #ff4500;
+  --info: #38bdf8;
+  
+  --radius: 8px;
+}
+
+.dark {
+  --background: #213b58;
+  --foreground: #f8fafc;
+  
+  --primary: #145184;
+  --primary-foreground: #ffffff;
+  
+  --accent: #ffd700;
+  --accent-foreground: #145184;
+  
+  --card: rgba(20, 81, 132, 0.2);
+  --card-foreground: #f8fafc;
+  
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  
+  --border: rgba(255, 255, 255, 0.1);
+  --input: #1e293b;
+  --ring: #38bdf8;
 }
 
 @theme inline {
@@ -30,29 +59,31 @@
   --color-border: var(--border);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
   
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-success: var(--success);
+  --color-alert: var(--alert);
+  --color-info: var(--info);
+  
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-inter);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-    
-    --primary: #1e629c;
-    --primary-foreground: #ffffff;
-    
-    --accent: #FFD700;
-    --accent-foreground: #020617;
-    
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #38bdf8;
-  }
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border: 1px border var(--border);
+}
+
+.dark .glass {
+  background: rgba(20, 81, 132, 0.1);
+  backdrop-filter: blur(20px);
+  border: 1px border rgba(255, 255, 255, 0.1);
 }
 
 body {
