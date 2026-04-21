@@ -19,6 +19,7 @@ import {
   LogOut, LogIn, Smartphone
 } from "lucide-react";
 import Swal from "sweetalert2";
+import PWAInstallBanner from "@/components/PWAInstallBanner";
 
 export default function CheckInKiosk() {
   // --- ESTADOS DE SINCRONIZACIÓN ---
@@ -587,6 +588,9 @@ export default function CheckInKiosk() {
            </button>
         </div>
       </div>
+      
+      {/* BANNER DE INSTALACIÓN PWA */}
+      <PWAInstallBanner />
     </div>
   );
 }
