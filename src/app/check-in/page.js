@@ -164,15 +164,15 @@ export default function CheckInKiosk() {
         sig: data.sig
       };
 
-      // CASO A: Vinculación General de Terminal
-      if (normalizedData.sig && !isAuthorized && !normalizedData.id_trabajador) {
-        await handleVinculacion(normalizedData);
+      // CASO A: Vinculación General de Terminal (claves e, o, ts, n)
+      if (data.sig && !isAuthorized && !data.t && !data.id_trabajador) {
+        await handleVinculacion(data);
         return;
       }
 
-      // CASO B: Vinculación de Celular Personal
-      if (normalizedData.sig && normalizedData.id_trabajador) {
-        await handleVinculacionPersonal(normalizedData);
+      // CASO B: Vinculación de Celular Personal (claves e, t, p, ts, n)
+      if (data.sig && (data.t || data.id_trabajador)) {
+        await handleVinculacionPersonal(data);
         return;
       }
 
@@ -200,13 +200,15 @@ export default function CheckInKiosk() {
 
       const pubKey = await importKey(empresa.public_key_kiosko, "public");
       const { sig, ...pureData } = payload;
+      
+      // La verificación debe hacerse con el objeto EXACTO que se firmó (con e, o, ts, n)
       const isValid = await verifyData(pureData, sig, pubKey);
 
       if (!isValid) throw new Error("Firma de vinculación inválida.");
 
       const authObj = {
-        id_empresa: payload.id_empresa,
-        id_obra: payload.id_obra,
+        id_empresa: payload.e || payload.id_empresa,
+        id_obra: payload.o || payload.id_obra,
         nombre_empresa: empresa.nombre_comercial,
         vinculado_el: Date.now()
       };
@@ -232,21 +234,26 @@ export default function CheckInKiosk() {
 
       const pubKey = await importKey(empresa.public_key_kiosko, "public");
       const { sig, ...pureData } = payload;
+      
+      // La verificación debe hacerse con el objeto EXACTO que se firmó (con e, t, p, ts, n)
       const isValid = await verifyData(pureData, sig, pubKey);
 
-      if (!isValid) throw new Error("Autorización de trabajador denegada.");
+      if (!isValid) throw new Error("Autorización denegada (Firma inválida).");
+
+      const idTrabajador = payload.t || payload.id_trabajador;
+      const idEmpresa = payload.e || payload.id_empresa;
 
       // Si no viene el nombre en el QR (QR comprimido), lo buscamos en el caché local
       let nombreW = payload.nombre_trabajador;
       if (!nombreW) {
         const db = await initDB();
-        const worker = await db.get("fuerza_trabajo", payload.id_trabajador);
+        const worker = await db.get("fuerza_trabajo", idTrabajador);
         nombreW = worker?.nombre || "Trabajador de Confianza";
       }
 
       const authObj = {
-        id_empresa: payload.id_empresa,
-        id_trabajador: payload.id_trabajador,
+        id_empresa: idEmpresa,
+        id_trabajador: idTrabajador,
         nombre_trabajador: nombreW,
         nombre_empresa: empresa.nombre_comercial,
         vinculado_el: Date.now()
