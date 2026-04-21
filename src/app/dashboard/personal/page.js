@@ -5,13 +5,14 @@ import {
   Users, Search, Filter, Plus, FileSpreadsheet, 
   MoreVertical, Pencil, Trash2, UserMinus, UserPlus,
   RefreshCw, Download, Upload, AlertCircle, CheckCircle2,
-  ChevronLeft, ChevronRight, X, Calendar, PlusCircle
+  ChevronLeft, ChevronRight, X, Calendar, PlusCircle, Smartphone
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import Swal from 'sweetalert2'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { getLimit } from '@/lib/planLimits'
+import VincularCelularPersonal from '@/components/VincularCelularPersonal'
 
 export default function PersonalPage() {
   // Estados de Datos
@@ -36,6 +37,9 @@ export default function PersonalPage() {
   const [editingWorker, setEditingWorker] = useState(null)
   const [importFile, setImportFile] = useState(null)
   const [bajaData, setBajaData] = useState({ id: null, date: format(new Date(), 'yyyy-MM-dd'), motive: '' })
+
+  const [showPersonalLinkModal, setShowPersonalLinkModal] = useState(false)
+  const [selectedWorkerForLink, setSelectedWorkerForLink] = useState(null)
 
   // Formulario Contratista
   const [subFormData, setSubFormData] = useState({ razon_social: '', rfc: '', contacto_nombre: '' })
@@ -487,15 +491,24 @@ export default function PersonalPage() {
                           >
                             <Pencil className="w-4 h-4" />
                          </button>
-                         {w.activo ? (
-                           <button 
-                            onClick={() => { setBajaData({ ...bajaData, id: w.id_trabajador }); setShowBajaModal(true); }}
-                            className="p-2 rounded-md hover:bg-alert/10 text-alert transition-all"
-                            title="Registrar Baja"
-                           >
-                            <UserMinus className="w-4 h-4" />
-                           </button>
-                         ) : (
+                          {w.activo ? (
+                            <>
+                              <button 
+                                onClick={() => { setSelectedWorkerForLink(w); setShowPersonalLinkModal(true); }}
+                                className="p-2 rounded-md hover:bg-indigo-50 text-indigo-600 dark:text-indigo-400 transition-all border border-transparent hover:border-indigo-100"
+                                title="Vincular Celular Personal"
+                              >
+                                <Smartphone className="w-4 h-4" />
+                              </button>
+                              <button 
+                                onClick={() => { setBajaData({ ...bajaData, id: w.id_trabajador }); setShowBajaModal(true); }}
+                                className="p-2 rounded-md hover:bg-alert/10 text-alert transition-all"
+                                title="Registrar Baja"
+                              >
+                                <UserMinus className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : (
                            <button 
                             onClick={() => handleReactivate(w.id_trabajador)}
                             className="p-2 rounded-md hover:bg-success/10 text-success transition-all"
@@ -751,6 +764,15 @@ export default function PersonalPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── MODAL VINCULACIÓN PERSONAL ── */}
+      {showPersonalLinkModal && selectedWorkerForLink && (
+        <VincularCelularPersonal 
+          trabajador={selectedWorkerForLink}
+          idEmpresa={userProfile?.id_empresa}
+          onClose={() => { setShowPersonalLinkModal(false); setSelectedWorkerForLink(null); }}
+        />
       )}
 
     </div>

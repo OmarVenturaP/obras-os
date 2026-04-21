@@ -248,6 +248,7 @@ export default function MonitoreoAsistenciaPage() {
                 <tr className="bg-gray-50/50 dark:bg-slate-800/30 transition-colors">
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Trabajador</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Actividad Diaria (Entrada | Salida)</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 text-center">Jornada (Hrs)</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Kiosko / Origen</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Ubicación</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Estado de Sinc.</th>
@@ -318,6 +319,29 @@ export default function MonitoreoAsistenciaPage() {
                             </div>
                           )}
                         </div>
+                      </td>
+                      <td className="px-8 py-7 text-center">
+                        {a.hora_entrada && a.hora_salida ? (() => {
+                          const diff = new Date(a.hora_salida) - new Date(a.hora_entrada);
+                          const totalMinutes = Math.floor(diff / 60000);
+                          const h = Math.floor(totalMinutes / 60);
+                          const m = totalMinutes % 60;
+                          return (
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-black text-slate-900 shadow-accent/10">
+                                {h}h {m}m
+                              </span>
+                              <div className="w-12 h-1 bg-gray-100 rounded-full mt-1 overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary" 
+                                  style={{ width: `${Math.min((totalMinutes / 480) * 100, 100)}%` }} 
+                                />
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest italic">---</span>
+                        )}
                       </td>
                       <td className="px-8 py-7 text-sm">
                         <div>

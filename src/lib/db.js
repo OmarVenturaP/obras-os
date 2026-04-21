@@ -12,7 +12,7 @@ export const initDB = async () => {
       }
       if (oldVersion < 2) {
         if (!db.objectStoreNames.contains(STORE_FUERZA)) {
-          // Usamos id_trabajador como key para no duplicar si se resincroniza
+          // Usamos id_trabajador como key. Almacenará también ultimo_estado y ultima_asistencia
           db.createObjectStore(STORE_FUERZA, { keyPath: 'id_trabajador' });
         }
       }
