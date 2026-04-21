@@ -267,7 +267,7 @@ export default function CheckInKiosk() {
       
       Swal.fire({ 
         title: "¡Bienvenido!", 
-        text: `Dispositivo vinculado a: ${payload.nombre_trabajador}`, 
+        text: `Dispositivo vinculado a: ${nombreW}`, 
         icon: "success",
         confirmButtonColor: "#1d4ed8"
       });
