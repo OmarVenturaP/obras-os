@@ -79,10 +79,10 @@ export default function VincularTerminal({ idEmpresa }) {
       const privKey = await importKey(privKeyB64, "private");
       
       const payload = {
-        id_empresa: idEmpresa,
-        id_obra: "TODAS", // Podría ser dinámico si seleccionas una obra
-        timestamp: Date.now(),
-        nonce: Math.random().toString(36).substring(7),
+        e: idEmpresa, // e = id_empresa
+        o: "TODAS", // o = id_obra
+        ts: Date.now(),
+        n: Math.random().toString(36).substring(7), // n = nonce
       };
 
       const signature = await signData(payload, privKey);
@@ -140,7 +140,7 @@ export default function VincularTerminal({ idEmpresa }) {
           ) : (
             <div className="flex flex-col items-center gap-4 animate-in zoom-in-95 duration-300">
               <div className="p-4 bg-white rounded-2xl shadow-xl border border-gray-100">
-                <QRCodeSVG value={qrPayload} size={320} level="H" includeMargin />
+                <QRCodeSVG value={qrPayload} size={320} level="M" includeMargin />
               </div>
               <p className="text-xs text-center text-gray-500 max-w-sm font-bold uppercase tracking-widest mt-2">
                 Escanea este código desde la tablet para autorizarla

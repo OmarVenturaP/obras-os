@@ -153,15 +153,26 @@ export default function CheckInKiosk() {
     try {
       const data = JSON.parse(decodedText);
       
+      // Mapear claves comprimidas si existen
+      const normalizedData = {
+        id_empresa: data.e || data.id_empresa,
+        id_obra: data.o || data.id_obra,
+        id_trabajador: data.t || data.id_trabajador,
+        timestamp: data.ts || data.timestamp,
+        nonce: data.n || data.nonce,
+        is_personal: !!(data.p || data.is_personal),
+        sig: data.sig
+      };
+
       // CASO A: Vinculación General de Terminal
-      if (data.sig && !isAuthorized && !data.id_trabajador) {
-        await handleVinculacion(data);
+      if (normalizedData.sig && !isAuthorized && !normalizedData.id_trabajador) {
+        await handleVinculacion(normalizedData);
         return;
       }
 
       // CASO B: Vinculación de Celular Personal
-      if (data.sig && data.id_trabajador) {
-        await handleVinculacionPersonal(data);
+      if (normalizedData.sig && normalizedData.id_trabajador) {
+        await handleVinculacionPersonal(normalizedData);
         return;
       }
 
@@ -225,10 +236,18 @@ export default function CheckInKiosk() {
 
       if (!isValid) throw new Error("Autorización de trabajador denegada.");
 
+      // Si no viene el nombre en el QR (QR comprimido), lo buscamos en el caché local
+      let nombreW = payload.nombre_trabajador;
+      if (!nombreW) {
+        const db = await initDB();
+        const worker = await db.get("fuerza_trabajo", payload.id_trabajador);
+        nombreW = worker?.nombre || "Trabajador de Confianza";
+      }
+
       const authObj = {
         id_empresa: payload.id_empresa,
         id_trabajador: payload.id_trabajador,
-        nombre_trabajador: payload.nombre_trabajador,
+        nombre_trabajador: nombreW,
         nombre_empresa: empresa.nombre_comercial,
         vinculado_el: Date.now()
       };

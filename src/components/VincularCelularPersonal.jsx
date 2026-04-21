@@ -27,12 +27,11 @@ export default function VincularCelularPersonal({ trabajador, idEmpresa, onClose
       const privKey = await importKey(privKeyB64, "private");
       
       const payload = {
-        id_empresa: idEmpresa,
-        id_trabajador: trabajador.id_trabajador,
-        nombre_trabajador: trabajador.nombre_completo || trabajador.nombre,
-        is_personal: true, // Flag importante
-        timestamp: Date.now(),
-        nonce: Math.random().toString(36).substring(7),
+        e: idEmpresa, // e = id_empresa
+        t: trabajador.id_trabajador, // t = id_trabajador
+        p: 1, // p = is_personal flag
+        ts: Date.now(),
+        n: Math.random().toString(36).substring(7), // n = nonce
       };
 
       const signature = await signData(payload, privKey);
@@ -92,7 +91,7 @@ export default function VincularCelularPersonal({ trabajador, idEmpresa, onClose
            ) : (
              <div className="flex flex-col items-center gap-6 animate-in fade-in zoom-in-90 duration-300">
                 <div className="p-4 bg-white rounded-[2rem] shadow-2xl border border-gray-100 flex items-center justify-center">
-                  <QRCodeSVG value={qrPayload} size={280} level="H" includeMargin />
+                  <QRCodeSVG value={qrPayload} size={300} level="M" includeMargin />
                 </div>
                 <div className="text-center space-y-1">
                    <p className="text-[10px] font-black uppercase text-primary tracking-widest">Escanea con el celular del trabajador</p>
