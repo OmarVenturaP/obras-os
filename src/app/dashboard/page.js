@@ -90,7 +90,7 @@ export default function DashboardPage() {
           <div className="flex gap-6 shrink-0">
              <div className="p-5 glass rounded-lg text-center min-w-[100px] border border-white/5">
                 <span className="text-2xl font-black text-white block tracking-[0.02em]">{stats.personal}</span>
-                <span className="text-[9px] text-white/30 uppercase font-black tracking-widest mt-1">Sindicato</span>
+                <span className="text-[9px] text-white/30 uppercase font-black tracking-widest mt-1">Personal</span>
              </div>
              <div className="p-5 glass rounded-lg text-center min-w-[100px] border border-accent/20 transition-all hover:bg-white/5">
                 <span className="text-2xl font-black text-accent block tracking-[0.02em]">{stats.informes}</span>

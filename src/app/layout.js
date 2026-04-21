@@ -15,6 +15,7 @@ const inter = Inter({
 export const metadata = {
   title: "ObrasOS | Gestión HSE Multi-tenant",
   description: "SaaS de Control de Obras y Seguridad e Higiene",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }) {

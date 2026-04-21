@@ -1,7 +1,10 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { getLimit } from '@/lib/planLimits'
 
 const menuItems = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊' },
@@ -13,6 +16,38 @@ const menuItems = [
 
 export default function Sidebar({ enterprise }) {
   const pathname = usePathname()
+  const [activeCount, setActiveCount] = useState(0)
+  const plan = enterprise?.plan_suscripcion || 'free'
+  const maxEmployees = getLimit(plan, 'maxEmployees')
+
+  useEffect(() => {
+    if (!enterprise?.id_empresa) return
+
+    const fetchCounts = async () => {
+      const { count } = await supabase
+        .from('dat_fuerza_trabajo')
+        .select('*', { count: 'exact', head: true })
+        .eq('id_empresa', enterprise.id_empresa)
+        .eq('activo', true)
+      
+      setActiveCount(count || 0)
+    }
+
+    fetchCounts()
+    
+    // Opcional: Escuchar cambios en tiempo real
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'dat_fuerza_trabajo' }, () => {
+        fetchCounts()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [enterprise?.id_empresa])
+
+  const usagePercent = Math.min((activeCount / maxEmployees) * 100, 100)
+  const isLimitNear = usagePercent > 80
 
   return (
     <aside className="w-64 h-screen sticky top-0 bg-primary text-white flex flex-col shadow-2xl transition-all duration-300">
@@ -67,9 +102,23 @@ export default function Sidebar({ enterprise }) {
             <p className="text-sm font-bold truncate leading-none mb-1 text-white">
               {enterprise?.nombre_comercial || 'Cargando Empresa...'}
             </p>
-            <p className="text-[9px] text-white/40 uppercase tracking-[0.2em] font-black">
-              {enterprise?.plan_suscripcion || 'Enterprise'} Plan
-            </p>
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+               <p className="text-[9px] text-accent uppercase tracking-widest font-black">
+                 Plan {plan}
+               </p>
+               <span className="text-[8px] text-white/40 font-bold tabular-nums">
+                 {activeCount}/{maxEmployees === Infinity ? '∞' : maxEmployees}
+               </span>
+            </div>
+            
+            {maxEmployees !== Infinity && (
+               <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                 <div 
+                   className={`h-full transition-all duration-1000 ${isLimitNear ? 'bg-orange-500' : 'bg-accent'}`}
+                   style={{ width: `${usagePercent}%` }} 
+                 />
+               </div>
+            )}
           </div>
         </div>
       </div>

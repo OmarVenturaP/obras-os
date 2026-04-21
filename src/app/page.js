@@ -170,7 +170,13 @@ export default function Home() {
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative pt-48 pb-32 px-6 md:px-12 overflow-hidden flex flex-col items-center">
+      <section className="relative pt-48 pb-32 px-6 md:px-12 overflow-hidden flex flex-col items-center group">
+        {/* Background Image with Overlay */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 bg-[url('/hero.png')] bg-cover bg-center bg-no-repeat opacity-30 dark:opacity-20 group-hover:scale-105 transition-transform duration-[10s] ease-out" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/40 to-background" />
+        </div>
+
         {/* Background Grid */}
         <div className="absolute inset-0 dark:bg-grid-white/[0.05] bg-grid-slate-900/[0.04] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
         
@@ -282,9 +288,9 @@ export default function Home() {
             <div className="space-y-12">
               <div>
                 <span className="text-[9px] font-black tracking-[0.4em] text-primary-foreground dark:text-accent uppercase mb-4 block">La Solución</span>
-                <h2 className="text-5xl md:text-[64px] font-black leading-none tracking-tighter uppercase mb-6">3 Módulos,<br/>un sistema</h2>
+                <h2 className="text-5xl md:text-[64px] font-black leading-none tracking-tighter uppercase mb-6">diferentes Módulos,<br/>un sistema</h2>
                 <p className="text-white/50 text-sm font-medium leading-relaxed max-w-sm italic">
-                  "Construido por constructores para constructores."
+                  "Construido especialmente para constructores."
                 </p>
               </div>
 
@@ -337,9 +343,9 @@ export default function Home() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            {[
-             { t: 'Básico', p: '79', s: 'hasta 30 empleados', f: ['1 obra activa', 'Control Asistencia', 'Control Materiales', 'Reportes PDF', 'Soporte Email'], popular: false },
-             { t: 'Profesional', p: '199', s: 'hasta 150 empleados', f: ['5 obras activas', 'Todo el plan Básico', 'Dashboard Multi-obra', 'Exportación CSV/PDF', 'Roles Avanzados', 'Soporte Prioritario'], popular: true },
-             { t: 'Empresa', p: '399', s: 'empleados ilimitados', f: ['Obras ilimitadas', 'Todo el Profesional', 'Multi-empresa', 'API Access', 'Onboarding Personalizado', 'SLA Garantizado'], popular: false }
+             { t: 'Básico', p: '990', s: 'hasta 30 empleados', f: ['1 obra activa', 'Control Asistencia', 'Control Materiales', 'Reportes PDF', 'Soporte Email'], popular: false },
+             { t: 'Profesional', p: '2,490', s: 'hasta 150 empleados', f: ['5 obras activas', 'Todo el plan Básico', 'Dashboard Multi-obra', 'Exportación CSV/PDF', 'Roles Avanzados', 'Soporte Prioritario'], popular: true },
+             { t: 'Empresa', p: '5,990', s: 'empleados ilimitados', f: ['Obras ilimitadas', 'Todo el Profesional', 'Multi-empresa', 'API Access', 'Onboarding Personalizado', 'SLA Garantizado'], popular: false }
            ].map((p, idx) => (
              <Reveal key={idx} delay={idx * 100}>
                  <div 
@@ -353,7 +359,7 @@ export default function Home() {
                     <span className={`text-2xl font-black italic text-[#145184] dark:text-foreground`}>$</span>
                     <span className={`text-7xl font-black tracking-tighter text-[#0d1b2a] dark:text-foreground`}>{p.p}</span>
                  </div>
-                 <div className={`text-[9px] font-black uppercase tracking-widest text-[#475569] dark:text-muted-foreground mb-12 italic`}>USD / MES · {p.s}</div>
+                 <div className={`text-[9px] font-black uppercase tracking-widest text-[#475569] dark:text-muted-foreground mb-12 italic`}>MXN / MES · {p.s}</div>
                  
                  <div className="flex-1 space-y-4 mb-12">
                    {p.f.map((f, i) => (
@@ -380,14 +386,14 @@ export default function Home() {
       <section className="py-32 bg-[#145184] dark:bg-[#0d1b2a] border-t border-white/5 overflow-hidden">
         <div className="max-w-7xl mx-auto px-6 text-center mb-24">
            <span className="text-[10px] font-black tracking-[0.3em] text-accent uppercase mb-4 block">Feedback</span>
-           <h2 className="text-5xl md:text-[64px] font-black leading-none tracking-tighter text-white uppercase italic">Elite Pilots</h2>
+           <h2 className="text-5xl md:text-[64px] font-black leading-none tracking-tighter text-white uppercase italic">QUE OPINAN NUESTROS CLIENTES</h2>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-10">
            {[
-             { q: 'Antes el capataz me mandaba fotos por WhatsApp y yo nunca sabía en qué etapa iba realmente la obra. Ahora veo todo desde el dashboard.', a: 'RM', n: 'Roberto Mendoza', r: 'Constructora Cumbres' },
-             { q: 'El módulo de materiales nos ayudó a detectar una fuga de cemento que llevaba meses. El ahorro del primer mes pagó el sistema.', a: 'LP', n: 'Laura Pérez', r: 'Edificaciones del Pacífico' },
-             { q: 'La asistencia QR eliminó el problema de los aviadores. Sé exactamente quién está en obra sin depender de reportes manuales.', a: 'CA', n: 'Carlos Arredondo', r: 'Grupo Constructor Arredondo' }
+             { q: 'Antes el responsable de obra me mandaba fotos por WhatsApp y yo nunca sabía en qué etapa iba realmente el proyecto. Ahora veo todo desde el dashboard.', a: 'RM', n: 'Roberto Mendoza', r: 'Constructora' },
+             { q: 'El módulo de materiales nos ayudó a detectar una fuga de cemento que llevaba meses. El ahorro del primer mes pagó el sistema.', a: 'LP', n: 'Laura Pérez', r: 'Edificaciones' },
+             { q: 'La asistencia QR eliminó el problema de los trabajadores fantasma. Sé exactamente quién está en obra sin depender de reportes manuales.', a: 'CA', n: 'Carlos Arredondo', r: 'Grupo Constructor' }
            ].map((t, idx) => (
              <Reveal key={idx} delay={idx * 150}>
                <div className="p-12 rounded-lg bg-white/5 border border-white/10 h-full flex flex-col group hover:bg-white/10 transition-colors">
@@ -410,8 +416,11 @@ export default function Home() {
       <section id="piloto" className="py-40 px-6 max-w-4xl mx-auto text-center">
         <Reveal>
           <h2 className="text-6xl md:text-[100px] font-black leading-none tracking-tighter text-primary dark:text-foreground uppercase mb-10">60 DÍAS <span className="text-accent">SIN COSTO</span></h2>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-2 font-medium leading-relaxed">
+            Abierto el registro de prueba 2026. <span className="text-accent font-bold">Prueba piloto</span> disponible para implementación asistida.
+          </p>
           <p className="text-muted-foreground text-sm max-w-md mx-auto mb-16 font-medium leading-relaxed">
-            Abierto el registro de pilotos 2025. Solo <span className="text-accent font-bold">3 vacantes</span> disponibles para implementación asistida.
+            <span className="text-accent font-bold">Oferta especial para subcontratistas de RECAL ESTRUCTURAS</span>
           </p>
           
           <div className="max-w-md mx-auto space-y-4">
@@ -432,10 +441,10 @@ export default function Home() {
       <footer className="py-24 px-6 md:px-12 border-t border-border flex flex-col md:flex-row items-center justify-between gap-12">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-primary font-black text-sm">🏗</div>
-          <span className="font-black text-xs uppercase tracking-widest text-foreground">ObrasOS · 2025</span>
+          <span className="font-black text-xs uppercase tracking-widest text-foreground">ObrasOS · 2026</span>
         </div>
         
-        <div className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.3em] text-center">Software Estructural · Excellence in Security</div>
+        <div className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.3em] text-center">Software Estructural. Soluciones reales.</div>
 
         <div className="flex gap-10">
            <Link href="#" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-accent transition-colors">Privacidad</Link>
