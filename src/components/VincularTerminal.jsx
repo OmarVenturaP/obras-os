@@ -139,10 +139,10 @@ export default function VincularTerminal({ idEmpresa }) {
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4 animate-in zoom-in-95 duration-300">
-              <div className="p-4 bg-white rounded-2xl shadow-inner border border-gray-50">
-                <QRCodeSVG value={qrPayload} size={200} level="H" includeMargin />
+              <div className="p-4 bg-white rounded-2xl shadow-xl border border-gray-100">
+                <QRCodeSVG value={qrPayload} size={320} level="H" includeMargin />
               </div>
-              <p className="text-[10px] text-center text-gray-400 max-w-[200px] uppercase font-bold tracking-widest">
+              <p className="text-xs text-center text-gray-500 max-w-sm font-bold uppercase tracking-widest mt-2">
                 Escanea este código desde la tablet para autorizarla
               </p>
               <button
