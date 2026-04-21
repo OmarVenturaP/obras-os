@@ -70,3 +70,8 @@ export const searchFuerzaTrabajoLocal = async (query) => {
 
   return filtrados.slice(0, 10); // Limitar a 10 resultados
 };
+
+export const getTrabajadorLocal = async (id) => {
+  const db = await initDB();
+  return db.get(STORE_FUERZA, id);
+};

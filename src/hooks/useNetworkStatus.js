@@ -39,6 +39,7 @@ export function useNetworkStatus() {
         fecha_hora: p.fecha_hora,
         latitud: p.latitud,
         longitud: p.longitud,
+        inspeccion_epp: p.inspeccion_epp, // Nuevo campo
         sincronizado_local: true
       }));
 

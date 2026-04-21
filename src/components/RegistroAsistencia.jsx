@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { saveAsistenciaPendiente, getCountAsistenciasPendientes } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { WifiOff, Wifi, CloudUpload, CheckCircle2, UserCheck, AlertCircle, Loader2 } from "lucide-react";
+import { generateFolioHash } from "@/lib/utils";
+import { 
+  WifiOff, Wifi, CloudUpload, CheckCircle2, 
+  UserCheck, AlertCircle, Loader2, ExternalLink
+} from "lucide-react";
+import ChecklistEPP from "./ChecklistEPP";
 import Swal from "sweetalert2";
 
 export default function RegistroAsistencia() {
@@ -13,6 +18,10 @@ export default function RegistroAsistencia() {
   const [pendientesAcount, setPendientesAcount] = useState(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [tipoAsistencia, setTipoAsistencia] = useState("entrada");
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [selectedWorkerName, setSelectedWorkerName] = useState("");
+  const [tempAsistenciaData, setTempAsistenciaData] = useState(null);
+  const [idEmpresa, setIdEmpresa] = useState(null);
 
   // Usualmente esto vendría de escanear un QR (workerId)
   // Para propósitos de este componente, usamos un input simulado que vendría de un scanner.
@@ -28,6 +37,21 @@ export default function RegistroAsistencia() {
     const interval = setInterval(updateCount, 5000);
     return () => clearInterval(interval);
   }, [isOnline, isSyncing]);
+
+  useEffect(() => {
+    async function getEmpresa() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: profile } = await supabase
+          .from("dat_personal_area")
+          .select("id_empresa")
+          .eq("auth_user_id", session.user.id)
+          .single();
+        if (profile) setIdEmpresa(profile.id_empresa);
+      }
+    }
+    getEmpresa();
+  }, []);
 
   useEffect(() => {
     if (syncSuccess) {
@@ -83,49 +107,25 @@ export default function RegistroAsistencia() {
         longitud: posicion.coords.longitude,
       };
 
-      // 3. Evaluar conectividad
-      if (isOnline) {
-        // Enviar a Supabase directo
-        const { error } = await supabase
-          .from("dat_asistencias")
-          .insert({
-            ...nuevaAsistencia,
-            sincronizado_local: false,
-          });
-
-        if (error) throw error;
+      // 3. Si es ENTRADA, requerir Checklist EPP
+      if (tipoAsistencia === "entrada") {
+        // Intentar obtener nombre del trabajador para el modal
+        const { data: worker } = await supabase
+          .from("dat_fuerza_trabajo")
+          .select("nombre")
+          .eq("id_trabajador", workerId)
+          .single();
         
-        Swal.fire({
-          title: "Asistencia Registrada",
-          text: `El registro de ${tipoAsistencia.toUpperCase()} fue sincronizado exitosamente.`,
-          icon: "success",
-          timer: 2000,
-          showConfirmButton: false,
-          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
-          color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
-        });
-      } else {
-        // Guardar local en IndexedDB (Offline)
-        await saveAsistenciaPendiente({
-          ...nuevaAsistencia,
-          sincronizado_local: true,
-        });
-        
-        // Actualizamos UI
-        setPendientesAcount((prev) => prev + 1);
-        
-        Swal.fire({
-          title: "Guardado Localmente",
-          text: `No hay internet. La ${tipoAsistencia} se sincronizará al conectar.`,
-          icon: "info",
-          timer: 3000,
-          showConfirmButton: false,
-          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
-          color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
-        });
+        setSelectedWorkerName(worker?.nombre || "Trabajador Desconocido");
+        setTempAsistenciaData(nuevaAsistencia);
+        setShowChecklist(true);
+        setIsRegistering(false);
+        return; // Detenemos aquí, continuará en handleChecklistComplete
       }
 
-      setWorkerId(""); // Limpiamos scanner
+      // 4. Si es SALIDA o ya pasó el checklist, guardar directamente
+      await finalizarRegistro(nuevaAsistencia);
+
     } catch (err) {
       console.error(err);
       Swal.fire({
@@ -136,7 +136,131 @@ export default function RegistroAsistencia() {
         color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
       });
     } finally {
-      setIsRegistering(false);
+      if (tipoAsistencia !== "entrada") setIsRegistering(false);
+    }
+  };
+
+  const handleChecklistComplete = async (eppData) => {
+    setShowChecklist(false);
+    setIsRegistering(true);
+    
+    const asistenciaCompleta = {
+      ...tempAsistenciaData,
+      inspeccion_epp: eppData
+    };
+
+    await finalizarRegistro(asistenciaCompleta);
+    setIsRegistering(false);
+    setTempAsistenciaData(null);
+  };
+
+  const finalizarRegistro = async (datos) => {
+    try {
+      let generatedHash = null;
+
+      if (isOnline) {
+        // Enviar a Supabase directo
+        const { data: resAsis, error } = await supabase
+          .from("dat_asistencias")
+          .insert({
+            ...datos,
+            sincronizado_local: false,
+          })
+          .select("id_asistencia")
+          .single();
+
+        if (error) throw error;
+        
+        // Si hay checklist, generar y guardar Folio Público
+        if (datos.inspeccion_epp && idEmpresa) {
+          generatedHash = generateFolioHash();
+          const folioPayload = {
+            id_empresa: idEmpresa,
+            id_asistencia: resAsis.id_asistencia,
+            id_trabajador: datos.id_trabajador,
+            folio_hash: generatedHash,
+            epp_json: datos.inspeccion_epp.items,
+            firma_data: datos.inspeccion_epp.signature,
+            latitud: datos.latitud,
+            longitud: datos.longitud
+          };
+
+          const { error: errorFolio } = await supabase
+            .from("dat_folios_seguridad")
+            .insert(folioPayload);
+          
+          if (errorFolio) {
+            console.error("Error guardando folio:", errorFolio);
+            Swal.fire({
+              title: "Error de Folio",
+              text: `La asistencia se registró pero el folio falló: ${errorFolio.message}`,
+              icon: "warning",
+              background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+              color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
+            });
+          }
+        }
+
+        if (generatedHash) {
+          Swal.fire({
+            title: "¡Folio Generado!",
+            html: `
+              <div class="space-y-4">
+                <p class="text-sm">Se ha registrado la asistencia y el folio de seguridad:</p>
+                <div class="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+                  <span class="text-2xl font-black text-blue-600 dark:text-blue-400 tracking-tighter">${generatedHash}</span>
+                </div>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Comparte este código para revisiones externas</p>
+              </div>
+            `,
+            icon: "success",
+            showConfirmButton: true,
+            confirmButtonText: "VER REPORTE COMPLETO",
+            confirmButtonColor: "#1d4ed8",
+            showCancelButton: true,
+            cancelButtonText: "CERRAR",
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.open(`/folio/${generatedHash}`, "_blank");
+            }
+          });
+        } else {
+          Swal.fire({
+            title: "Asistencia Registrada",
+            text: `El registro de ${datos.tipo.toUpperCase()} fue sincronizado exitosamente.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
+          });
+        }
+      } else {
+        // Guardar local en IndexedDB (Offline)
+        await saveAsistenciaPendiente({
+          ...datos,
+          sincronizado_local: true,
+        });
+        
+        // Actualizamos UI
+        setPendientesAcount((prev) => prev + 1);
+        
+        Swal.fire({
+          title: "Guardado Localmente",
+          text: `No hay internet. El registro se sincronizará al conectar.`,
+          icon: "info",
+          timer: 3000,
+          showConfirmButton: false,
+          background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+          color: document.documentElement.classList.contains('dark') ? '#f8fafc' : '#1e293b'
+        });
+      }
+
+      setWorkerId(""); // Limpiamos scanner
+    } catch (err) {
+      throw err;
     }
   };
 
@@ -267,6 +391,19 @@ export default function RegistroAsistencia() {
           </button>
         )}
       </div>
+
+      {/* MODAL DE CHECKLIST EPP */}
+      {showChecklist && (
+        <ChecklistEPP 
+          workerName={selectedWorkerName}
+          onComplete={handleChecklistComplete}
+          onCancel={() => {
+            setShowChecklist(false);
+            setTempAsistenciaData(null);
+            setWorkerId("");
+          }}
+        />
+      )}
     </div>
   );
 }

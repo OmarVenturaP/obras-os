@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
+import ChecklistEPP from "@/components/ChecklistEPP";
+import { generateFolioHash } from "@/lib/utils";
 
 export default function CheckInKiosk() {
   // --- ESTADOS DE SINCRONIZACIÓN ---
@@ -40,6 +42,9 @@ export default function CheckInKiosk() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+  
+  // --- ESTADOS EPP ---
+  const [eppPending, setEppPending] = useState(null); // { workerId, workerName, tipo }
 
   const scannerRef = useRef(null);
 
@@ -310,15 +315,22 @@ export default function CheckInKiosk() {
   };
 
   // --- REGISTRO ASISTENCIA ---
-  const registrarAsistencia = async (trabajador) => {
+  const registrarAsistencia = async (trabajador, securityData = null) => {
     if (isRegistering) return;
-    setIsRegistering(true);
 
     const workerId = typeof trabajador === "string" ? trabajador : trabajador.id_trabajador;
-    const workerName = typeof trabajador === "object" ? trabajador.nombre : "Trabajador";
+    const workerName = typeof trabajador === "object" ? trabajador.nombre : (eppPending?.workerName || "Trabajador");
 
+    // 1. Interponer Checklist EPP solo para operativos (Fuerza de Trabajo) en su ENTRADA
+    // Si no tenemos securityData y es un registro de entrada, pedimos el checklist
+    if (!securityData && !kioskData.id_trabajador && tipoAsistencia === "entrada") {
+        setEppPending({ workerId, workerName, tipo: tipoAsistencia });
+        return;
+    }
+
+    setIsRegistering(true);
     try {
-      // 1. Lógica Inteligente: Consultar último estado en caché
+      // 2. Lógica Inteligente: Consultar último estado en caché
       const db = await initDB();
       const cached = await db.get("fuerza_trabajo", workerId);
       
@@ -337,26 +349,9 @@ export default function CheckInKiosk() {
         });
         if (!override) {
           setIsRegistering(false);
+          setEppPending(null);
           return;
         }
-      }
-
-      const colorBtn = finalTipo === "entrada" ? "#1d4ed8" : "#e11d48";
-      const { value: confirmed } = await Swal.fire({
-        title: `¿Confirmar ${finalTipo.toUpperCase()}?`,
-        text: workerName,
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonText: "SÍ, REGISTRAR",
-        confirmButtonColor: colorBtn,
-        cancelButtonText: "CANCELAR",
-        background: "#ffffff",
-        customClass: { title: 'font-black uppercase', confirmButton: 'rounded-xl', cancelButton: 'rounded-xl' }
-      });
-
-      if (!confirmed) {
-        setIsRegistering(false);
-        return;
       }
 
       const pos = await new Promise((resolve) => navigator.geolocation.getCurrentPosition(resolve, () => resolve({ coords: {} }), { timeout: 5000 }));
@@ -371,9 +366,38 @@ export default function CheckInKiosk() {
         sincronizado_local: !isOnline
       };
 
+      let idAsistenciaServidor = null;
+      let generatedHash = null;
+
       if (isOnline) {
-        const { error } = await supabase.from("dat_asistencias").insert(asistencia);
+        // A. Guardar Asistencia
+        const { data: resAsis, error } = await supabase
+          .from("dat_asistencias")
+          .insert(asistencia)
+          .select("id_asistencia")
+          .single();
+        
         if (error) throw error;
+        idAsistenciaServidor = resAsis.id_asistencia;
+
+        // B. Guardar Folio EPP si existe
+        if (securityData) {
+          generatedHash = generateFolioHash();
+          const folio = {
+            id_empresa: kioskData.id_empresa,
+            id_asistencia: idAsistenciaServidor,
+            id_trabajador: workerId,
+            folio_hash: generatedHash,
+            epp_json: securityData.items,
+            firma_data: securityData.signature,
+            latitud: asistencia.latitud,
+            longitud: asistencia.longitud
+          };
+          
+          const { error: errorFolio } = await supabase.from("dat_folios_seguridad").insert(folio);
+          if (errorFolio) console.error("Error guardando folio:", errorFolio);
+        }
+
       } else {
         await saveAsistenciaPendiente(asistencia);
         setPendientesCount(prev => prev + 1);
@@ -384,17 +408,44 @@ export default function CheckInKiosk() {
         await db.put("fuerza_trabajo", { ...cached, ultimo_estado: finalTipo, ultima_fecha: now });
       }
 
-      Swal.fire({
-        title: "¡Éxito!",
-        text: isOnline ? "Registro enviado." : "Guardado offline.",
-        icon: "success",
-        timer: 1500,
-        showConfirmButton: false
-      });
+      // 3. MOSTRAR RESULTADO AL USUARIO
+      if (isOnline && generatedHash) {
+        Swal.fire({
+          title: "¡Folio Generado!",
+          html: `
+            <div class="space-y-4">
+              <p class="text-sm">Se ha registrado la asistencia y el folio de seguridad:</p>
+              <div class="p-4 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                <span class="text-2xl font-black text-blue-600 tracking-tighter">${generatedHash}</span>
+              </div>
+              <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Comparte este código para revisiones externas</p>
+            </div>
+          `,
+          icon: "success",
+          showConfirmButton: true,
+          confirmButtonText: "VER REPORTE COMPLETO",
+          confirmButtonColor: "#1d4ed8",
+          showCancelButton: true,
+          cancelButtonText: "CERRAR",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.open(`/folio/${generatedHash}`, "_blank");
+          }
+        });
+      } else {
+        Swal.fire({
+          title: "¡Éxito!",
+          text: isOnline ? "Registro enviado correctamente." : "Guardado offline.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }
 
       setMode("scan");
       setSearchQuery("");
       setSearchResults([]);
+      setEppPending(null);
       
       // Auto-toggle si es modo personal
       if (kioskData.id_trabajador) {
@@ -591,6 +642,15 @@ export default function CheckInKiosk() {
       
       {/* BANNER DE INSTALACIÓN PWA */}
       <PWAInstallBanner />
+
+      {/* MODAL EPP */}
+      {eppPending && (
+        <ChecklistEPP 
+          workerName={eppPending.workerName}
+          onCancel={() => setEppPending(null)}
+          onComplete={(securityData) => registrarAsistencia(eppPending.workerId, securityData)}
+        />
+      )}
     </div>
   );
 }

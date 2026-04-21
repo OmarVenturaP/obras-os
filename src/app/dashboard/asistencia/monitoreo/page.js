@@ -7,7 +7,7 @@ import {
   Search, ArrowRight, ExternalLink, 
   Wifi, WifiOff, Loader2, 
   ChevronLeft, LayoutGrid, List,
-  RefreshCw, Radio
+  RefreshCw, Radio, ShieldCheck, FileText
 } from "lucide-react";
 import Link from "next/link";
 
@@ -55,7 +55,8 @@ export default function MonitoreoAsistenciaPage() {
             lat_salida: curr.tipo === 'salida' ? curr.latitud : null,
             lng_salida: curr.tipo === 'salida' ? curr.longitud : null,
             is_offline: curr.sincronizado_local,
-            id_referencia: curr.id_asistencia // Para el highlight
+            id_referencia: curr.id_asistencia, // Para el highlight
+            folio_hash: curr.folio_hash // Mantener folio
           };
         } else {
           if (curr.tipo === 'entrada' && (!acc[key].hora_entrada || curr.fecha_hora < acc[key].hora_entrada)) {
@@ -70,6 +71,7 @@ export default function MonitoreoAsistenciaPage() {
           }
           if (curr.sincronizado_local) acc[key].is_offline = true;
           acc[key].id_referencia = curr.id_asistencia;
+          if (curr.folio_hash) acc[key].folio_hash = curr.folio_hash;
         }
         return acc;
       }, {});
@@ -250,6 +252,7 @@ export default function MonitoreoAsistenciaPage() {
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Actividad Diaria (Entrada | Salida)</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500 text-center">Jornada (Hrs)</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Kiosko / Origen</th>
+                  <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Seguridad</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Ubicación</th>
                   <th className="px-8 py-6 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-slate-500">Estado de Sinc.</th>
                 </tr>
@@ -348,6 +351,24 @@ export default function MonitoreoAsistenciaPage() {
                           <p className="font-bold text-gray-700 dark:text-slate-300">{a.kiosko_nombre || 'Admin App'}</p>
                           <p className="text-[9px] font-black text-gray-400 dark:text-slate-600 uppercase tracking-widest">Punto de Control</p>
                         </div>
+                      </td>
+                      <td className="px-8 py-7">
+                        {a.folio_hash ? (
+                          <Link 
+                            href={`/folio/${a.folio_hash}`}
+                            target="_blank"
+                            className="flex items-center gap-2 text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg w-fit hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all border border-blue-100/50 dark:border-blue-800/50 group/folio"
+                          >
+                            <ShieldCheck size={14} className="group-hover/folio:scale-110 transition-transform" />
+                            {a.folio_hash}
+                            <ExternalLink size={10} className="opacity-40" />
+                          </Link>
+                        ) : (
+                          <div className="flex items-center gap-2 text-[10px] font-black text-gray-300 dark:text-slate-700 uppercase tracking-widest italic pl-2">
+                             <div className="w-1 h-1 rounded-full bg-gray-200 dark:bg-slate-800" />
+                             Sin Folio
+                          </div>
+                        )}
                       </td>
                       <td className="px-8 py-7">
                         <div className="flex flex-col gap-2">
