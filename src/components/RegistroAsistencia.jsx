@@ -4,11 +4,12 @@ import { useState, useEffect } from "react";
 import { saveAsistenciaPendiente, getCountAsistenciasPendientes } from "@/lib/db";
 import { supabase } from "@/lib/supabase";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
-import { WifiOff, Wifi, CloudUpload, CheckCircle2, UserCheck, AlertCircle } from "lucide-react";
+import { WifiOff, Wifi, CloudUpload, CheckCircle2, UserCheck, AlertCircle, Loader2 } from "lucide-react";
 import Swal from "sweetalert2";
 
 export default function RegistroAsistencia() {
   const { isOnline, isSyncing, syncError, syncSuccess, triggerSync } = useNetworkStatus();
+  const [workerId, setWorkerId] = useState("");
   const [pendientesAcount, setPendientesAcount] = useState(0);
   const [isRegistering, setIsRegistering] = useState(false);
   const [tipoAsistencia, setTipoAsistencia] = useState("entrada");
