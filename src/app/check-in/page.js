@@ -190,10 +190,11 @@ export default function CheckInKiosk() {
   // --- LÓGICA DE VINCULACIÓN ---
   const handleVinculacion = async (payload) => {
     try {
+      const idEmp = payload.e || payload.id_empresa;
       const { data: empresa, error } = await supabase
         .from("cat_empresas")
         .select("public_key_kiosko, nombre_comercial")
-        .eq("id_empresa", payload.id_empresa)
+        .eq("id_empresa", idEmp)
         .single();
 
       if (error || !empresa?.public_key_kiosko) throw new Error("Error obteniendo llaves de seguridad.");
@@ -224,10 +225,11 @@ export default function CheckInKiosk() {
 
   const handleVinculacionPersonal = async (payload) => {
     try {
+      const idEmp = payload.e || payload.id_empresa;
       const { data: empresa, error } = await supabase
         .from("cat_empresas")
         .select("public_key_kiosko, nombre_comercial")
-        .eq("id_empresa", payload.id_empresa)
+        .eq("id_empresa", idEmp)
         .single();
 
       if (error || !empresa?.public_key_kiosko) throw new Error("Error de seguridad en empresa.");
