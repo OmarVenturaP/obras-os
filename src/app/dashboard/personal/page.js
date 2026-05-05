@@ -138,9 +138,14 @@ export default function PersonalPage() {
 
     try {
       if (editingWorker) {
+        const payload = {
+          ...formData,
+          id_subcontratista: formData.id_subcontratista === "" ? null : formData.id_subcontratista
+        };
+
         const { error } = await supabase
           .from('dat_fuerza_trabajo')
-          .update(formData)
+          .update(payload)
           .eq('id_trabajador', editingWorker.id_trabajador)
         if (error) throw error
         Swal.fire('¡Éxito!', 'Trabajador actualizado correctamente', 'success')
@@ -159,9 +164,16 @@ export default function PersonalPage() {
           })
         }
 
+        const payload = { 
+          ...formData, 
+          id_empresa: userProfile.id_empresa, 
+          creado_por: userProfile.auth_user_id,
+          id_subcontratista: formData.id_subcontratista === "" ? null : formData.id_subcontratista
+        };
+
         const { error } = await supabase
           .from('dat_fuerza_trabajo')
-          .insert([{ ...formData, id_empresa: userProfile.id_empresa, creado_por: userProfile.auth_user_id }])
+          .insert([payload])
         if (error) throw error
         Swal.fire('¡Éxito!', 'Trabajador registrado correctamente', 'success')
       }
