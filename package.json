@@ -13,6 +13,7 @@
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/ssr": "^0.10.0",
     "@supabase/supabase-js": "^2.101.1",
+    "@teispace/next-themes": "^0.4.1",
     "date-fns": "^4.1.0",
     "html5-qrcode": "^2.3.8",
     "idb": "^8.0.3",
