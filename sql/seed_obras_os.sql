@@ -103,6 +103,7 @@ CREATE TABLE dat_asistencias (
     fecha_hora TIMESTAMP WITH TIME ZONE NOT NULL,
     latitud NUMERIC,
     longitud NUMERIC,
+    inspeccion_epp JSONB, -- Checklist de Seguridad + Firma
     sincronizado_local BOOLEAN DEFAULT FALSE,
     fecha_registro_servidor TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

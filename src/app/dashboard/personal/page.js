@@ -14,6 +14,18 @@ import { es } from 'date-fns/locale'
 import { getLimit } from '@/lib/planLimits'
 import VincularCelularPersonal from '@/components/VincularCelularPersonal'
 
+const Toast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 2000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.addEventListener('mouseenter', Swal.stopTimer)
+    toast.addEventListener('mouseleave', Swal.resumeTimer)
+  }
+})
+
 export default function PersonalPage() {
   // Estados de Datos
   const [workers, setWorkers] = useState([])
@@ -128,22 +140,79 @@ export default function PersonalPage() {
   const handleSaveWorker = async (e) => {
     e.preventDefault()
     
-    // Validaciones Básicas
-    if (formData.nss && formData.nss.length !== 11) {
-      return Swal.fire('Error', 'El NSS debe tener 11 dígitos', 'error')
+    // 1. Validaciones de campos obligatorios en el cliente (evita errores crípticos del backend)
+    const nombreTrim = (formData.nombre || '').trim()
+    const paternalTrim = (formData.apellido_paterno || '').trim()
+    const maternalTrim = (formData.apellido_materno || '').trim()
+    const nssTrim = (formData.nss || '').trim()
+    const curpTrim = (formData.curp || '').trim()
+    const puestoTrim = (formData.puesto || '').trim()
+    const empNoTrim = (formData.numero_empleado || '').trim()
+    const ingresoObraVal = (formData.fecha_ingreso_obra || '').trim()
+    const altaImssVal = (formData.fecha_alta_imss || '').trim()
+
+    if (!nombreTrim) {
+      return Swal.fire({
+        title: 'Dato Faltante',
+        text: 'Por favor, ingrese el nombre del trabajador.',
+        icon: 'warning',
+        confirmButtonColor: '#145184'
+      })
     }
-    if (formData.curp && formData.curp.length !== 18) {
-      return Swal.fire('Error', 'La CURP debe tener 18 caracteres', 'error')
+    if (!paternalTrim) {
+      return Swal.fire({
+        title: 'Dato Faltante',
+        text: 'Por favor, ingrese el apellido paterno del trabajador.',
+        icon: 'warning',
+        confirmButtonColor: '#145184'
+      })
+    }
+    
+    // 2. Validaciones de formato
+    if (nssTrim && nssTrim.length !== 11) {
+      return Swal.fire({
+        title: 'Formato de NSS Inválido',
+        text: 'El Número de Seguridad Social (NSS) debe constar exactamente de 11 dígitos.',
+        icon: 'warning',
+        confirmButtonColor: '#145184'
+      })
+    }
+    if (curpTrim && curpTrim.length !== 18) {
+      return Swal.fire({
+        title: 'Formato de CURP Inválido',
+        text: 'La CURP debe constar exactamente de 18 caracteres alfanuméricos.',
+        icon: 'warning',
+        confirmButtonColor: '#145184'
+      })
+    }
+
+    // 3. Sanitizar payload: convertir cadenas vacías a null para evitar errores de tipo en PostgreSQL
+    const payload = {
+      nombre: nombreTrim,
+      apellido_paterno: paternalTrim,
+      apellido_materno: maternalTrim || null,
+      nss: nssTrim || null,
+      curp: curpTrim || null,
+      puesto: puestoTrim || null,
+      numero_empleado: empNoTrim || null,
+      fecha_ingreso_obra: ingresoObraVal || null,
+      fecha_alta_imss: altaImssVal || null,
+      id_subcontratista: formData.id_subcontratista === "" ? null : formData.id_subcontratista
     }
 
     try {
       if (editingWorker) {
         const { error } = await supabase
           .from('dat_fuerza_trabajo')
-          .update(formData)
+          .update(payload)
           .eq('id_trabajador', editingWorker.id_trabajador)
+        
         if (error) throw error
-        Swal.fire('¡Éxito!', 'Trabajador actualizado correctamente', 'success')
+        
+        Toast.fire({
+          icon: 'success',
+          title: 'Trabajador actualizado correctamente'
+        })
       } else {
         // >>> CANDADO DE PLAN (Manual) <<<
         const plan = userProfile?.cat_empresas?.plan_suscripcion || 'free'
@@ -152,24 +221,42 @@ export default function PersonalPage() {
 
         if (activeCount >= maxEmployees) {
           return Swal.fire({
-            title: 'Límite Alcazado',
+            title: 'Límite Alcanzado',
             text: `Tu plan ${plan.toUpperCase()} permite hasta ${maxEmployees} empleados activos. ¡Es momento de un Upgrade!`,
             icon: 'warning',
-            confirmButtonText: 'Entendido'
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#145184'
           })
+        }
+
+        const payloadInsert = { 
+          ...payload, 
+          id_empresa: userProfile.id_empresa, 
+          creado_por: userProfile.auth_user_id
         }
 
         const { error } = await supabase
           .from('dat_fuerza_trabajo')
-          .insert([{ ...formData, id_empresa: userProfile.id_empresa, creado_por: userProfile.auth_user_id }])
+          .insert([payloadInsert])
+        
         if (error) throw error
-        Swal.fire('¡Éxito!', 'Trabajador registrado correctamente', 'success')
+        
+        Toast.fire({
+          icon: 'success',
+          title: 'Trabajador registrado correctamente'
+        })
       }
       
       setShowModal(false)
       fetchWorkers()
     } catch (error) {
-      Swal.fire('Error', error.message, 'error')
+      console.error("Error al guardar trabajador:", error)
+      Swal.fire({
+        title: 'Error de Servidor',
+        text: error.message || 'Ocurrió un error desconocido al comunicarse con la base de datos.',
+        icon: 'error',
+        confirmButtonColor: '#d33'
+      })
     }
   }
 
@@ -186,7 +273,10 @@ export default function PersonalPage() {
         .eq('id_trabajador', bajaData.id)
       
       if (error) throw error
-      Swal.fire('Procesado', 'Baja registrada correctamente', 'success')
+      Toast.fire({
+        icon: 'success',
+        title: 'Baja registrada correctamente'
+      })
       setShowBajaModal(false)
       fetchWorkers()
     } catch (error) {
@@ -212,7 +302,10 @@ export default function PersonalPage() {
       
       if (error) Swal.fire('Error', error.message, 'error')
       else {
-        Swal.fire('Activado', 'Trabajador reactivado con éxito', 'success')
+        Toast.fire({
+          icon: 'success',
+          title: 'Trabajador reactivado con éxito'
+        })
         fetchWorkers()
       }
     }
@@ -297,7 +390,10 @@ export default function PersonalPage() {
         .from('cat_subcontratistas')
         .insert([{ ...subFormData, id_empresa: userProfile.id_empresa }])
       if (error) throw error
-      Swal.fire('¡Éxito!', 'Contratista agregada', 'success')
+      Toast.fire({
+        icon: 'success',
+        title: 'Contratista agregada'
+      })
       setSubFormData({ razon_social: '', rfc: '', contacto_nombre: '' })
       fetchInitialData() // Para actualizar el select
     } catch (error) {
