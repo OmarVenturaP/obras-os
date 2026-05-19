@@ -8,7 +8,7 @@ import BotonTema from '@/components/BotonTema'
 import { 
   LayoutDashboard, Users, ClipboardList, 
   MapPin, Settings, ShieldCheck, LogOut, Menu, X, FileBarChart,
-  ChevronLeft, ChevronRight, Bell
+  ChevronLeft, ChevronRight, Bell, Tractor
 } from 'lucide-react'
 
 export default function DashboardLayout({ children }) {
@@ -177,6 +177,7 @@ export default function DashboardLayout({ children }) {
           <NavItem href="/dashboard/informes" icon={FileBarChart} label="Informes HSE" />
           <NavItem href="/dashboard/asistencia" icon={MapPin} label="Control Asistencia" />
           <NavItem href="/dashboard/personal" icon={Users} label="Gestión Personal" />
+          <NavItem href="/dashboard/maquinaria" icon={Tractor} label="Control Maquinaria" />
           <NavItem href="/dashboard/settings" icon={Settings} label="Configuración" />
 
           {userData?.rol === 'Master' || userData?.rol === 'Admin' && (
